@@ -1,0 +1,169 @@
+	AREA mydata, DATA, READWRITE
+	ALIGN
+		
+;assuming that the numbers are bytes according to assignment instructions
+
+firstrow DCB 16,3,2,13 ;first row
+secondrow DCB 5,10,11,8 ;second row
+thirdrow DCB 9,6,7,12 ;third row
+fourthrow DCB 4,15,14,1 ;fourth row
+	
+	AREA ProjectsCode, CODE, READONLY
+	EXPORT __main
+	ALIGN
+	ENTRY
+	
+__main PROC
+	
+	LDR R0,=firstrow ;loads the adress of the first row of the array
+	LDR R1,[R0] ;loads the contents of the first row of the array into R1
+	LDR R0,=secondrow ;loads the adress of the second row of the array
+	LDR R2,[R0] ;loads the contents of the second row of the array into R2
+	LDR R0,=thirdrow ;loads the adress of the third row of the array
+	LDR R3,[R0] ;loads the contents of the third row of the array into R3
+	LDR R0,=fourthrow ;loads the adress of the fourth row of the array
+	LDR R4,[R0] ;loads the contents of the fourth row of the array into R4
+	
+	LDR R5,=0x20004000 ;starting address
+	
+	MOV R6, #0 ;register to hold the sum of a row in the loops
+	
+	STR R1,[R5] ;starts the adress at 0x20004000
+	BL rowsum ;goes to row subroutine
+	MOV R9, R8 ;moves the sum of the row into R9
+	
+	STR R2,[R5] ;now the adress starts at 0x20004004 since the loop incremented 
+				;r5 by 4
+	BL rowsum ;goes to row subroutine
+	MOV R10, R8 ;moves the sum of the this row into R10
+	CMP R9, R10 ;compares first row to this row
+	BNE notequal ;branches to notequal if the rows aren't equal
+	
+	;R10 can be reused for the future row/column sums because the comparison is done so there's
+	;no need to save any previous row/column values in that register
+	
+	STR R3,[R5] ;adress now starts at 0x20004008 since the loop incremented r5 by 4
+	BL rowsum ;branches to row subroutine
+	MOV R10, R8 ;moves the sum of this row into R10
+	CMP R9, R10 ;compares this row to the first row
+	BNE notequal ;branches to notequal if the rows aren't equal
+	
+	STR R4,[R5] ;adress now starts at 0x2000400C since the loop incremented r5 by 4
+	BL rowsum ;branches to row subroutine
+	MOV R10, R8 ;moves the sum of this row into R10
+	CMP R9, R10 ;compares this row to the first row
+	BNE notequal ;branches to notequal if the rows aren't equal
+	
+	LDR R5,=0x20004000 ;all rows should equal 34 so the adress is reset
+	
+	BL columnsum ;branches to column
+	MOV R10, R8 ;moves the sum of the column into R10
+	CMP R9, R10 ;compares the sum of the column to the first row
+	BNE notequal ;branches to notequal if the column and row sums aren't equal
+	ADD R5, R5,#1 ;increments R5 by 1 to have the pointer point to column 2
+	
+	BL columnsum ;branches to column
+	MOV R10, R8 ;moves the sum of the column into R10
+	
+	CMP R9,R10 ;compares the sum of the column to the first row
+	BNE notequal ;branches to notequal if the column and row sums aren't equal
+	ADD R5,R5,#2 ;increments R5 by 2 to have the pointer point to column 3
+	
+	BL columnsum ;branches to column
+	MOV R10, R8 ;moves the sum of the column into R10
+
+	CMP R9,R10 ;compares the sum of the column to the first row
+	BNE notequal ;branches to notequal if the column and row sums aren't equal
+	ADD R5, R5,#3 ;increments R5 by 3 to have the pointer point to column 4
+	
+	BL columnsum ;branches to column
+	MOV R10, R8 ;moves the sum of the column into R10
+	CMP R9, R10 ;comapres the sum of the column to the first row
+	BNE notequal ;branches to notequal if the column and row sums aren't equal
+	
+	BL diagonalsum ;all columns should be equal to 34 so now we check the sum of the diagonals
+	MOV R10, R8 ;loads sum of diagonal into R10
+	CMP R9, R10 ;compare the diagonal sum to the sum of the first row
+	BNE notequal ;branches to notequal if the diagonal and row sums aren't equal
+	
+	BL oppositesum ;branches to opposite
+	MOV R10, R8 ;loads sum of the opposite diagonal into R10
+	CMP R9, R10 ;compares the opposite diagonal sum with the first row
+	BNE notequal ;branches to not equal if the sums aren't equal
+	
+	MOV R0, #0xFFFFFFFF ;all diagonals are also equal to 34 so the matrix is a magic square
+						;so we load R0 with all 1s
+	B finish ;end the program
+	
+
+notequal
+	MOV R0,#0 ;RO gets set to 0 since the matrix isn't a magic squal
+	B finish ;end the program
+
+finish 
+	B finish
+	ENDP
+
+rowsum PROC
+	MOV R7,#0 ;counter register
+	MOV R8,#0 ;sets R8 (the sum register) to 0
+	
+rowloop	LDRB R6,[R5],#1 ;load the sum of the numbers throughout the row in R7
+		ADD R8,R8,R6 ;add the row sum with R8
+		ADD R7,R7,#1 ;decrement counter
+		CMP R7,#4 ;checks if the loop counter is 0
+		BNE rowloop ;countinues the loop if the counter isn't 0
+		
+		CMP R8,#34 ;checks if the sum of the row is 34 (the actual sum of the rows)
+		MOVNE R0,#0 ;if its not equal then 0 is moved into R0
+		BX LR ;returns to the program 
+		ENDP 
+
+columnsum PROC
+		MOV R7,#0 ;counter register
+		MOV R8,#0 ;sets R8 (the sum register) to 0
+		
+columnloop	LDRB R6,[R5],#4 ;loads the sum of the numbers throughout the column in R7
+			ADD R8,R8,R6 ;adds the column sum to R8
+			ADD R7,R7,#1 ;decrements the counter
+			CMP R7,#4 ;checks if the counter is equal to 0
+			BNE columnloop ;continues the loop if the counter isn't 0
+		
+			CMP R8,#34 ;checks if the sum of the column is 34 (the actual sum of the columns)
+			MOVNE R0,#0 ;if it isn't equal than 0 is moved into R0
+			LDR R5,=0x20004000 ;resets the address since its now at the last row
+			BX LR ;returns to the program 
+			ENDP
+
+diagonalsum PROC
+		MOV R7,#0 ;counter register
+		MOV R8,#0 ;sets R8 (the sum register) to 0
+
+diagonalloop LDRB R6,[R5],#5 ;loads the sum of the numbers through the diagonal to R7
+			 ADD R8,R8,R6 ;adds the diagonal sum to R8
+			 ADD R7,R7,#1 ;decrements the counter
+			 CMP R7,#4 ;checks if the counter is equal to 0
+			 BNE diagonalloop ;continues the loop if the counter isn't 0
+		
+			 CMP R8,#34 ;checks if the sum of the diagonal is 34 (the actual sum of the diagonal)
+			 MOVNE R0,#0 ;if it isn't equal 0 is moved into R0
+			 BX LR ;returns to the program
+			 ENDP
+	
+oppositesum PROC
+		MOV R7,#0 ;coutner register
+		MOV R8,#0 ;sets R8 (the sum register) to 0
+		LDR R5,=0x20004003 ;starts at the last number of the first array
+	
+oppositeloop LDRB R6,[R5],#3 ;loads the sum of the numbers through the opposite diagonal in R7
+			 ADD R8,R8,R6 ;adds the opposite diagonal sum to R8
+			 ADD R7,R7,#1 ;decrements the counter
+			 CMP R7,#4 ;checks if the counter is 0
+			 BNE oppositeloop ;continues the loop if the counter isn't 0
+		 
+			 CMP R8,#34 ;compares if the sum of the opposite diagonal is 34 (the actual sum)
+			 MOVNE R0,#0 ;if it isn't equal 0 is moved into R0
+			 BX LR ;returns to the program
+			 ENDP
+
+	END

@@ -1,0 +1,36 @@
+	AREA mydata, DATA
+	AREA ProjectsCode, CODE, READONLY
+	EXPORT __main
+	ALIGN
+	ENTRY
+__main PROC
+
+	LDR R4,=0x20001000 ;address register
+	MOV SP,R4 ;defines SP
+	
+	LDR R2,=0xA ;first parameter
+	LDR R3,=0xB ;second parameter
+	
+	PUSH{R2,R3} ;pushes the two parameters onto the stack
+	
+	BL subroutine ;goes to the subroutine
+	B finish ;ends the program after the subroutine is executed
+	ENDP
+
+subroutine
+	CMP SP,R4 ;checks if SP is the same as R4
+	BEQ empty ;if they are equal it means that the stack is empty so the program branches to empty
+	
+	POP {R1} ;pops the next avalible parameter in the stack and stores it in R1
+	BX LR ;executes the next command in __main
+	
+empty
+	LDR R1,=0xFFFFFFFF ;R1 is set to 0xFFFFFFFF or all 1s
+	LDR R0,=0x1 ;R2 is set to 1
+	BX LR ;executes the next command in __main
+	
+finish
+   B finish
+
+   ENDP 
+   END	

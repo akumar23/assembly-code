@@ -1,0 +1,70 @@
+	AREA mydata, DATA
+num1 DCD 2687
+num2 DCD 500
+		
+	AREA ProjectsCode, CODE, READONLY
+	EXPORT __main
+	ALIGN
+	ENTRY
+	
+__main PROC
+	
+	;Question 1
+	LDR R1,=num1 ;sets R1 to num1
+	
+	LDR R2,=num2 ;sets R2 to num2
+
+	CMP R1, R2 ;comapres R1 to R2
+	
+	MOVLO R0,#1 ;makes R0 1 if num1 is less than num2
+	  
+	MOVHS R0,#-1 ;makes R0 -1 if num1 is greater than or equal to num2
+	
+	;Question 2
+
+	;assuming y is in R0
+	
+	LDR R0,=1001
+	
+	CMP R0, #10 ;compares R0(y) to 10
+	
+	BHI GREATERTHAN10 ;if R0(y) is greater than 10 it skips to the GREATERTHAN10 branch
+	
+	LSL R1, R0, #1 ;this only runs if R0(y) isn't greater than 10
+				   ;LSL is unsigned multiplication by two so running it once means R0(y)=2y
+				
+	B finish
+	
+GREATERTHAN10
+	CMP R0, #100 ;compares R0(y) to 100
+	
+	BHI GREATERTHAN100 ;if R0(y) is greater than 100 it skips to the GREATERTHAN100 branch
+	
+	RSB R1, R0, R0, LSL #2 ;this only runs if R0(y) isn't greater than 100
+						   ;running LSL twice means its unsigned multiplication by 2 twice making it 4*R0(4y)
+						   ;with RSB it becomes R0 = 4R0-R0 or 4y-y
+	B finish
+	
+GREATERTHAN100
+	CMP R0, #1000 ;comapres R0(y) to 1000
+	
+	BHI GREATERTHAN1000 ;if R0 is greater than 1000 it skips to the GREATERTHAN1000 branch
+	
+	ADD R1, R0, R0, LSL#2 ;this only runs if R0(y) isn't greater than 1000
+						  ;LSL running twice means 4*R0 or 4y and the ADD R0 makes it R1 = R0 + 4*R0 or y+4y=5y
+	B finish
+	
+GREATERTHAN1000
+	LSL R1, R0, #3 ;LSL running three times is unsigned multiplication by 2, 3 times making it 8*R0 or 8y
+	
+	SUB R1, R1, R0 ;R1 is 8y and R0 is still y so this is 8y-y=7y
+	
+	SUB R1, R1, R0 ;R1 is now 7y and R0 is still y so this is 7y-y=6y
+	
+	B finish
+
+finish
+   B finish
+
+   ENDP 
+   END

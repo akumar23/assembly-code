@@ -1,0 +1,49 @@
+;#1
+;loads lower 32 bits of the first number
+LDR r0, =0xFFFFFFF 
+
+;loads upper 32 bits of the first number
+LDR r1, =0x0000002 
+
+;loads lower 32 bits of the second number
+LDR r2, =0x0000001 
+
+;loads upper 32 bits of the second number
+LDR r3,=0x0000004 
+
+;subtracts the lower 32 bits and sets carry for the next subtraction
+SUBS r4, r0, r2
+
+;subtracts the upper 32 bits using the carry bit from the previous subtraction
+SBC r5, r1, r3
+
+
+;#2
+; replace bit 5 with bit 12 at r0 and load to register r1
+BFI R1, R0, #5, #8
+
+
+;#3
+LDR R0, = 0x0F ;15
+LDR R1, = 0x02 ;2
+
+;divides without the remainder so r2=7
+SDIV R2, R0, R1
+
+;r3 = 15-(2*7) = 1 which is the remainder
+MLS R3, R1, R2, R0
+
+
+;loading r6 and r7 with values given for the next 2 questions
+LDR R6, = 0x80000001
+LDR R7, = 2
+
+
+;#4
+;unsigned long multiply of r6 and r7 loaded into r0 and r1
+UMULL R0, R1, R6, R7
+
+
+;#5
+;signed long multiply of r6 and r7 stored in r2
+SMULL R2, R6, R7 
